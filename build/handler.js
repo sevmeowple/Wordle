@@ -22,7 +22,7 @@ var expected = new Set([
   "HOST_HEADER",
   "SERVERDEV"
 ]);
-var build_options = {"development":false,"dynamic_origin":false,"xff_depth":1,"assets":true};
+var build_options = {"development":false,"dynamic_origin":false,"xff_depth":1,"assets":"build"};
 if ("") {
   for (const name in Bun.env) {
     if (name.startsWith("")) {

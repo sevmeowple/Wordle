@@ -18,7 +18,8 @@ const config = {
 		}),
 		paths: {
 			base: '/Wordle'
-		}
+		},
+		appDir: 'app'
 	}
 };
 export default config;

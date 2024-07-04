@@ -1,17 +1,27 @@
 <script lang="ts">
 	import { onMount, afterUpdate } from 'svelte';
 	import { gsap } from 'gsap';
-	// 读取静态文本文件并随机target
+	import { base } from '$app/paths';
+	import {
+		Modal,
+		initializeStores,
+		getModalStore,
+		type ModalSettings
+	} from '@skeletonlabs/skeleton';
+	initializeStores();
+
+	const modalStore = getModalStore(); // 读取静态文本文件并随机target
 	let CET4: string[] = [];
 	let CET6: string[] = [];
 	let KAOYAN: string[] = [];
 	let ALL: string[] = [];
 	let target = '';
 	let selectV = '1';
+	let BigSmall = '1';
 	onMount(async () => {
 		gsap.to('.container', { opacity: 1, duration: 0.5 });
 		try {
-			const response = await fetch('/words/CET4.txt');
+			const response = await fetch(`${base}/words/CET4.txt`);
 			const text = await response.text();
 
 			// 将文件内容按行拆分并存储到数组中
@@ -23,7 +33,7 @@
 			console.error('Failed to fetch words:', error);
 		}
 		try {
-			const response = await fetch('/words/CET6.txt');
+			const response = await fetch(`${base}/words/CET6.txt`);
 			const text = await response.text();
 
 			// 将文件内容按行拆分并存储到数组中
@@ -35,7 +45,7 @@
 			console.error('Failed to fetch words:', error);
 		}
 		try {
-			const response = await fetch('/words/KaoYan.txt');
+			const response = await fetch(`${base}/words/KaoYan.txt`);
 			const text = await response.text();
 
 			// 将文件内容按行拆分并存储到数组中
@@ -47,7 +57,7 @@
 			console.error('Failed to fetch words:', error);
 		}
 		try {
-			const response = await fetch('/words/words_alpha.txt');
+			const response = await fetch(`${base}/words/words_alpha.txt`);
 			const text = await response.text();
 
 			// 将文件内容按行拆分并存储到数组中
@@ -77,6 +87,8 @@
 	function change() {
 		animate = true;
 		showButton = false;
+		lose = false;
+		win = false;
 		let select = parseInt(selectV);
 		if (select === 1) {
 			target = CET4[Math.floor(Math.random() * CET4.length)];
@@ -88,11 +100,10 @@
 			target = ALL[Math.floor(Math.random() * ALL.length)];
 		}
 
-		target = target.toUpperCase();
+		if (BigSmall === '1') target = target.toLowerCase();
+		else target = target.toUpperCase();
 		// target = ALL[Math.floor(Math.random() * ALL.length)];
 	}
-	// target to 大写字母
-	target = target.toUpperCase();
 	// 校验函数，返回每个输入框的校验结果
 	function validateLetter(rowIndex: number, colIndex: number): string {
 		const letter = letters[rowIndex][colIndex];
@@ -152,29 +163,62 @@
 	// 处理输入事件
 	function handleInput(event: Event, rowIndex: number, colIndex: number): void {
 		const input = event.target as HTMLInputElement;
-		const value = input.value.toUpperCase();
 
-		// 只允许输入字母
-		if (/^[A-Z]$/.test(value)) {
-			letters[rowIndex][colIndex] = value;
-			// 自动跳到下一个输入框
-			if (colIndex < 4) {
-				const nextInput = document.getElementById(
-					`input-${rowIndex}-${colIndex + 1}`
-				) as HTMLInputElement;
-				nextInput.focus();
-			}
+		if (BigSmall === '1') {
+			const value = input.value.toLowerCase();
+			// 只允许输入字母
+			if (/^[a-z]$/.test(value)) {
+				letters[rowIndex][colIndex] = value;
+				// 自动跳到下一个输入框
+				if (colIndex < 4) {
+					const nextInput = document.getElementById(
+						`input-${rowIndex}-${colIndex + 1}`
+					) as HTMLInputElement;
+					nextInput.focus();
+				}
 
-			// 检查是否当前行已全部填满
-			if (letters[rowIndex].every((letter) => letter !== '')) {
-				letters[rowIndex].forEach((_, colIndex) => {
-					applyGsapAnimation(rowIndex, colIndex);
-				});
-				currentRow = rowIndex + 1; // 激活下一行
+				// 检查是否当前行已全部填满
+				if (letters[rowIndex].every((letter) => letter !== '')) {
+					letters[rowIndex].forEach((_, colIndex) => {
+						applyGsapAnimation(rowIndex, colIndex);
+					});
+					currentRow = rowIndex + 1; // 激活下一行
+				}
+			} else {
+				letters[rowIndex][colIndex] = '';
 			}
 		} else {
-			letters[rowIndex][colIndex] = '';
+			const value = input.value.toUpperCase();
+			// 只允许输入字母
+			if (/^[A-Z]$/.test(value)) {
+				letters[rowIndex][colIndex] = value;
+				// 自动跳到下一个输入框
+				if (colIndex < 4) {
+					const nextInput = document.getElementById(
+						`input-${rowIndex}-${colIndex + 1}`
+					) as HTMLInputElement;
+					nextInput.focus();
+				}
+
+				// 检查是否当前行已全部填满
+				if (letters[rowIndex].every((letter) => letter !== '')) {
+					letters[rowIndex].forEach((_, colIndex) => {
+						applyGsapAnimation(rowIndex, colIndex);
+					});
+					currentRow = rowIndex + 1; // 激活下一行
+				}
+			} else {
+				letters[rowIndex][colIndex] = '';
+			}
 		}
+	}
+
+	// 投降函数
+	function surrender() {
+		win = false;
+		lose = true;
+		// 禁用所有输入框
+		currentRow = 6;
 	}
 
 	// 处理按键事件
@@ -187,14 +231,33 @@
 			prevInput.focus();
 		}
 	}
+	// rule函数
+	function rule() {
+		// console.log('rule');
+		const modal: ModalSettings = {
+			type: 'alert',
+			title: 'Rule',
+			body: '绿色表示对的字母对的位置,橙色表示对的字母错的位置,红色表示错误的字母,你有六次机会进行尝试猜出这个五个字母的单词,加油吧',
+			buttonTextCancel: '已经完全理解了'
+		};
+		modalStore.trigger(modal);
+	}
 </script>
 
+<Modal />
 <div class="container">
 	{#if showButton}
 		<!-- 复选框用来控制词范围 -->
 		<div class="start">
 			<label class="label">
-				<span>词典选择</span>
+				<!-- <span>词典选择</span> -->
+				<div class="rules">
+					<button class="btn-xl btn-game btn btn-rules" on:click={rule}>RULE</button>
+				</div>
+				<select class="select" bind:value={BigSmall}>
+					<option value="1">小写显示</option>
+					<option value="2">大写显示</option>
+				</select>
 				<select class="select" bind:value={selectV}>
 					<option value="1">四级</option>
 					<option value="2">六级</option>
@@ -211,14 +274,14 @@
 		<ul class="text">
 			{#if win}
 				<li class="win-li">
-					<div>{byebye[currentRow]}</div>
+					<div>{byebye[currentRow - 1]}</div>
 					<button class="btn btn-g" on:click={game}> 再试一次吧 </button>
 				</li>
 			{/if}
 			{#if lose}
 				<li class="win-li">
 					<div>很抱歉哦,这次失败了呢,答案是{target}</div>
-					<div>{byebye[6]}</div>
+					<!-- <div>{byebye[6]}</div> -->
 					<button class="btn btn-g" on:click={game}> 再试一次吧 </button>
 				</li>
 			{/if}
@@ -239,6 +302,7 @@
 					</div>
 				</li>
 			{/each}
+			<button class="btn-surrender btn" on:click={surrender}> 投降喵,认输喵 </button>
 		</ul>
 	{/if}
 </div>
@@ -304,6 +368,17 @@
 		flex-direction: column;
 		align-items: center;
 	}
+	.select {
+		margin: 10px;
+	}
+	.btn-surrender {
+		width: 100%;
+		margin-top: 20px;
+		background-color: #ffa1a1;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
 	.btn-game {
 		margin-top: 20px;
 		background-color: #ffa1a1;
@@ -356,5 +431,21 @@
 		border-color: #ffa1a1; /* 聚焦时的边框颜色 */
 		box-shadow: 0 0 8px rgba(255, 158, 218, 0.6); /* 聚焦时的阴影 */
 		outline: none; /* 去掉默认的聚焦样式 */
+	}
+
+	/* rule */
+	.rules {
+		margin-bottom: 20px;
+	}
+
+	.btn-rules {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		background-color: #ffa1a1;
+		border: none;
+		padding: 10px;
+		cursor: pointer;
 	}
 </style>

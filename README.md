@@ -8,6 +8,7 @@
 # Wordle
 
 A simple web wordle
+You can preview and play it on [this website](https://sevmeowple.github.io/Wordle/)
 
 ## Developing
 

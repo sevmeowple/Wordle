@@ -7,12 +7,12 @@
 
 # Wordle
 
-A simple web wordle
-You can preview and play it on [this website](https://sevmeowple.github.io/Wordle/)
+A simple web wordle.
+You can preview and play it on [this website](https://sevmeowple.github.io/Wordle/).
 
 ## Developing
 
-Once you've created a project and installed dependencies with `bun install`, start a development server:
+Once you've cloned this project and installed dependencies with `bun install`, start a development server:
 
 ```bash
 bun dev
@@ -30,3 +30,7 @@ bun build
 ```
 
 You can preview the production build with `bun preview`.
+
+## Preview
+
+You can clone from branch gh-pages and deploy the SSR web 
